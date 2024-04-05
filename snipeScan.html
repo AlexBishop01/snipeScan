@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Barcode Scanner</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+</head>
+<body>
+
+<button id="start-button">Start Scanner</button>
+<div id="scanner-container"></div>
+
+<script>
+    document.getElementById('start-button').addEventListener('click', function() {
+        if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+            // Start the camera
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: document.querySelector('#scanner-container'),
+                        constraints: {
+                            width: 480,
+                            height: 320,
+                            facingMode: "environment"
+                        },
+                        area: { // defines scan area
+                            top: "0%",    // top offset
+                            right: "0%",  // right offset
+                            left: "0%",   // left offset
+                            bottom: "0%"  // bottom offset
+                        }
+                    },
+                    decoder: {
+                        readers: ["upc_reader"] // List of barcodes to recognize
+                    }
+                }, function(err) {
+                    if (err) {
+                        console.log(err);
+                        return
+                    }
+                    Quagga.start();
+                });
+
+                Quagga.onDetected(function(result) {
+                    var code = result.codeResult.code;
+                    console.log(code);
+                    Quagga.stop();
+                    stream.getTracks().forEach(track => track.stop()); // Stop the camera
+                });
+
+            }).catch(function(err) {
+                console.log(err);
+            });
+        }
+    });
+</script>
+
+</body>
+</html>
