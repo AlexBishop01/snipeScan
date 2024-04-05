@@ -33,7 +33,10 @@
                         }
                     },
                     decoder: {
-                        readers: ["upc_reader"] // List of barcodes to recognize
+                        readers: [
+                        "code_128_reader",
+                        "code_39_reader"
+                        ] // List of barcodes to recognize
                     }
                 }, function(err) {
                     if (err) {
