@@ -14,29 +14,31 @@
 <h2 id="barcode-value" style="text-align:center;">Scanned Barcode Value: None</h2>
 
 <script>
-    let selectedDeviceId;
     const codeReader = new ZXing.BrowserMultiFormatReader();
 
     document.getElementById('start-button').addEventListener('click', function() {
-        if (!selectedDeviceId) {
-            // List video input devices
-            codeReader.listVideoInputDevices()
-                .then((videoInputDevices) => {
-                    selectedDeviceId = videoInputDevices[0].deviceId;
-                    startScan(selectedDeviceId);
-                })
-                .catch((err) => {
-                    console.error(err);
-                });
-        } else {
-            startScan(selectedDeviceId);
-        }
+        // List video input devices
+        codeReader.listVideoInputDevices()
+            .then((videoInputDevices) => {
+                const rearCamera = videoInputDevices.find(device => device.label.includes('back') || device.label.includes('rear'));
+
+                if (rearCamera) {
+                    startScan(rearCamera.deviceId);
+                } else if (videoInputDevices.length > 0) {
+                    // Fallback to the first available camera if a rear-facing camera is not identified
+                    startScan(videoInputDevices[0].deviceId);
+                } else {
+                    console.error('No camera device found.');
+                }
+            })
+            .catch((err) => {
+                console.error(err);
+            });
     });
 
     function startScan(deviceId) {
         codeReader.decodeFromVideoDevice(deviceId, 'video', (result, err) => {
             if (result) {
-                // Handle the scanned code as necessary
                 document.getElementById('barcode-value').textContent = 'Scanned Barcode Value: ' + result.text;
                 codeReader.reset(); // Resets the scanner
                 document.getElementById('video').style.display = 'none'; // Hide the video element
