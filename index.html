@@ -10,6 +10,9 @@
 <button id="start-button">Start Scanner</button>
 <div id="scanner-container"></div>
 
+<!-- Header to display scanned barcode value -->
+<h2 id="barcode-value" style="text-align:center;">Scanned Barcode Value: None</h2>
+
 <script>
     document.getElementById('start-button').addEventListener('click', function() {
         if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
@@ -33,22 +36,20 @@
                         }
                     },
                     decoder: {
-                        readers: [
-                        "code_128_reader",
-                        "code_39_reader"
-                        ] // List of barcodes to recognize
+                        readers: ["code_128_reader", "upc_reader"] // Configure for multiple barcode types
                     }
                 }, function(err) {
                     if (err) {
                         console.log(err);
-                        return
+                        return;
                     }
                     Quagga.start();
                 });
 
                 Quagga.onDetected(function(result) {
                     var code = result.codeResult.code;
-                    console.log(code);
+                    // Display the barcode value in the header element
+                    document.getElementById('barcode-value').textContent = 'Scanned Barcode Value: ' + code;
                     Quagga.stop();
                     stream.getTracks().forEach(track => track.stop()); // Stop the camera
                 });
