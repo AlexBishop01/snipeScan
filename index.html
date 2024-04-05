@@ -3,62 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <title>Barcode Scanner</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <script src="https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js"></script>
 </head>
 <body>
 
 <button id="start-button">Start Scanner</button>
-<div id="scanner-container"></div>
+<video id="video" width="300" height="200" style="border: 1px solid black"></video>
 
-<!-- Header to display scanned barcode value -->
 <h2 id="barcode-value" style="text-align:center;">Scanned Barcode Value: None</h2>
 
 <script>
-    document.getElementById('start-button').addEventListener('click', function() {
-        if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
-            // Start the camera
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
-                Quagga.init({
-                    inputStream: {
-                        name: "Live",
-                        type: "LiveStream",
-                        target: document.querySelector('#scanner-container'),
-                        constraints: {
-                            width: 480,
-                            height: 320,
-                            facingMode: "environment"
-                        },
-                        area: { // defines scan area
-                            top: "0%",    // top offset
-                            right: "0%",  // right offset
-                            left: "0%",   // left offset
-                            bottom: "0%"  // bottom offset
-                        }
-                    },
-                    decoder: {
-                        readers: ["code_128_reader", "upc_reader"] // Configure for multiple barcode types
-                    }
-                }, function(err) {
-                    if (err) {
-                        console.log(err);
-                        return;
-                    }
-                    Quagga.start();
-                });
+    const video = document.getElementById('video');
+    const codeReader = new ZXing.BrowserMultiFormatReader();
 
-                Quagga.onDetected(function(result) {
-                    var code = result.codeResult.code;
-                    // Display the barcode value in the header element
-                    document.getElementById('barcode-value').textContent = 'Scanned Barcode Value: ' + code;
-                    Quagga.stop();
-                    stream.getTracks().forEach(track => track.stop()); // Stop the camera
-                });
-
-            }).catch(function(err) {
-                console.log(err);
+    document.getElementById('start-button').addEventListener('click', () => {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+            .then((stream) => {
+                video.srcObject = stream;
+                video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
+                video.play();
+                decodeContinuously(codeReader, video);
+            })
+            .catch((err) => {
+                console.error(err);
             });
-        }
     });
+
+    function decodeContinuously(codeReader, video) {
+        codeReader.decodeFromVideoElementContinuously(video, (result, err) => {
+            if (result) {
+                console.log(result);
+                document.getElementById('barcode-value').textContent = 'Scanned Barcode Value: ' + result.text;
+                // Optional: stop scanning after the first successful scan
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+
+            if (err && !(err instanceof ZXing.NotFoundException)) {
+                console.error(err);
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+        });
+    }
 </script>
 
 </body>
